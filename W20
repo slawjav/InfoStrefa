@@ -1,0 +1,142 @@
+
+import java.util.ArrayList;
+        import java.util.HashMap;
+        import java.util.List;
+        import java.util.Map;
+        import java.util.concurrent.TimeUnit;
+        import org.openqa.selenium.JavascriptExecutor;
+        import org.openqa.selenium.chrome.ChromeDriver;
+        import org.openqa.selenium.chrome.ChromeOptions;
+
+public class InfoStrefa1 {
+
+    static ChromeDriver d;
+
+    public static void zaloguj(String user, String pass)
+    {
+        ChromeOptions chromeOptions = new ChromeOptions();
+        List optionsList = new ArrayList();
+        optionsList.add("--window-size=600,550");
+        chromeOptions.addArguments(optionsList);
+
+        d = new ChromeDriver(chromeOptions);
+        d.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
+
+        d.get("http://infostrefa.com");
+        d.findElementByCssSelector("#cookie > span").click();
+        d.findElementByCssSelector("#login-div").click();
+        d.findElementByCssSelector("#login-form > input:nth-child(1)").sendKeys(user);
+        d.findElementByCssSelector("#login-form > input:nth-child(2)").sendKeys(pass);
+        d.findElementByCssSelector("#login-form > #login-submit").submit();
+    }
+
+    public static void otworzArchiwumAkcje(String dataTxtOd, String dataTxtDo)
+    {
+        d.get("http://infostrefa.com/infostrefa/pl/archiwum");
+        d.findElementByCssSelector("#dateFrom").sendKeys(dataTxtOd);
+        d.findElementByCssSelector("#dateTo").sendKeys(dataTxtDo);
+        d.findElementByCssSelector("#ui-id-1-button > span.ui-selectmenu-text").click();
+        d.findElementByCssSelector("#ui-id-6").click();
+
+        String script = "var gen=document.querySelector(\"#gpw-archives > div:nth-child(4) > button\");";
+        script += "window.scrollBy(0,gen.getBoundingClientRect().top-150);";
+        script += "gen.click()";
+
+        ((JavascriptExecutor) d).executeScript(script);
+        try { Thread.sleep(500); } catch(Exception e) {}
+    }
+
+    public static void wczytajWszystkieSpolki(Map<String,String> mapa)
+    {
+        String scr1 = "wyb=document.querySelector(\"#ui-id-2-button > span.ui-selectmenu-text\");";
+        scr1 += "window.scrollBy(0,wyb.getBoundingClientRect().top-150);";
+        scr1 += "wyb.click()";
+        ((JavascriptExecutor) d).executeScript(scr1);
+
+        d.findElementByCssSelector("#mCSB_3_container");
+
+        String scr = "res='';";
+        scr += "list=document.getElementById('mCSB_3_container').children;";
+        scr += "for(i=0;i<list.length;i++){";
+        scr += "res+='#'+list[i].id+'|'+list[i].innerText;}";
+        scr += "return res";
+
+        String listaTxt = (String) ((JavascriptExecutor) d).executeScript(scr);
+        String[] lista = listaTxt.split("#");
+        int i = 1;
+        while (i < lista.length) {
+            String[] elems = lista[i].split("\\|");
+            mapa.put(elems[1], elems[0]);
+            i++;
+        }
+
+    }
+
+    public static void wypiszNazwyWszystkichSpolek(Map<String,String> mapa)
+    {
+        for (String spolka : mapa.keySet())
+        {
+            System.out.println(spolka);
+        }
+    }
+
+    public static boolean wybierajSpolkeDoSkutku(String idSpolki, String nazwaSpolki)
+    {
+        System.out.println(idSpolki);
+        String scriptWybierzSpolke = "el=document.querySelector(\"#" + idSpolki + "\");el.click();";
+        String scriptWybranaSpolka = "return document.querySelector(\"#ui-id-2-button > span.ui-selectmenu-text\").innerText";
+        int liczba = 10;
+        while(--liczba>0){
+            System.out.println("Wybieranie spolki " + nazwaSpolki + " z listy.");
+            ((JavascriptExecutor) d).executeScript(scriptWybierzSpolke);
+            try { Thread.sleep(500); } catch(Exception e) {}
+            String wybrana = (String)((JavascriptExecutor) d).executeScript(scriptWybranaSpolka);
+            if (wybrana.equals(nazwaSpolki)) return true;
+        }
+        return false;
+    }
+
+    public static void pobierzPlikSpolki(Map<String,String> mapa, String nazwa)
+    {
+        if(wybierajSpolkeDoSkutku(mapa.get(nazwa), nazwa))
+        {
+            String script = "";
+            script += "xls=document.querySelector(\"#gpw-archives-instrument > div:nth-child(3) > button\");";
+            script += "xls.click()";
+            ((JavascriptExecutor) d).executeScript(script);
+            try { Thread.sleep(2000); } catch(Exception e) {}
+            System.out.println("Pobrano " +  nazwa);
+        }
+        else
+        {
+            System.out.println("Blad. Nie pobrano " +  nazwa);
+        }
+    }
+
+    public static void main(String[] args) {
+
+        String user = "";
+        String pass = "";
+        zaloguj(user, pass);
+        otworzArchiwumAkcje("2018-02-01", "2018-02-14");
+        Map<String, String> katalogSpolek = new HashMap<String, String>();
+        wczytajWszystkieSpolki(katalogSpolek);
+        //wypiszNazwyWszystkichSpolek(katalogSpolek);
+
+        String[] mojeSpolki = {"PKOBP","PZU","PEKAO","PKNORLEN","KGHM","PGE","BZWBK","PGNIG","LPP","ORANGEPL",
+                "MBANK","CYFRPLSAT","ENERGA","TAURONPE","ASSECOPOL","ALIOR","JSW","CCC","EUROCASH","LOTOS"};
+//        mojeSpolki[0] = "PKOBP";
+//        mojeSpolki[1] = "PZU";
+//        mojeSpolki[2] = "KGHM";
+
+        for (String spolka : mojeSpolki) {
+            if (!katalogSpolek.containsKey(spolka)) {
+                System.out.println("Spółki " + spolka + " nie ma na stronie.");
+                continue;
+            }
+            pobierzPlikSpolki( katalogSpolek, spolka );
+        }
+        try { Thread.sleep(5000); } catch(Exception e) {}
+        d.quit();
+    }
+}
