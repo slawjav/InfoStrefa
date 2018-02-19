@@ -1,0 +1,2 @@
+# InfoStrefa
+działa
