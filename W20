@@ -118,7 +118,9 @@ public class InfoStrefa1 {
         String user = "";
         String pass = "";
         zaloguj(user, pass);
-        otworzArchiwumAkcje("2018-02-01", "2018-02-14");
+        LocalDate today = LocalDate.now();
+        String poczatekM = today.toString().substring(0,8).concat("01");
+        otworzArchiwumAkcje(poczatekM, today+"");
         Map<String, String> katalogSpolek = new HashMap<String, String>();
         wczytajWszystkieSpolki(katalogSpolek);
         //wypiszNazwyWszystkichSpolek(katalogSpolek);
