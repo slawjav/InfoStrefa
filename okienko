@@ -112,26 +112,30 @@ public class Okno extends javax.swing.JFrame {
     }// </editor-fold>                        
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {                                         
-        Calendar dzis = Calendar.getInstance();
-        int dzien1 = 0;
-        int dzien2 = 0;
-        int dzien3 = 0;
-        if (dzisiaj.isSelected()) {
-            dzien1 = dzis.get(Calendar.DATE);
-        }
-        if (wczoraj.isSelected()){
-            dzien2 = dzis.get(Calendar.DATE) - 1;
-        }
-        if (przedwczoraj.isSelected()){
-            dzien3 = dzis.get(Calendar.DATE) - 2;
-        }
-        int ileStron = Integer.parseInt(iloscStron.getText());
-        sprobujKilkaRazy(() -> {
-            otworzStrone();
-        });
-        List<String> url = listaURL(ileStron);
-        zakladkiZ_Ogloszeniami(url, dzien1, dzien2, dzien3);
-        zrobione.setText("Zrobione");
+        new Thread(() -> {
+            Calendar dzis = Calendar.getInstance();
+            int dzien1 = 0;
+            int dzien2 = 0;
+            int dzien3 = 0;
+            if (dzisiaj.isSelected()) {
+                dzien1 = dzis.get(Calendar.DATE);
+            }
+            if (wczoraj.isSelected()) {
+                dzien2 = dzis.get(Calendar.DATE) - 1;
+            }
+            if (przedwczoraj.isSelected()) {
+                dzien3 = dzis.get(Calendar.DATE) - 2;
+            }
+            int ileStron = Integer.parseInt(iloscStron.getText());
+            sprobujKilkaRazy(() -> {
+                otworzStrone();
+            });
+            List<String> url = listaURL(ileStron);
+            zakladkiZ_Ogloszeniami(url, dzien1, dzien2, dzien3);
+            SwingUtilities.invokeLater(() -> {
+                zrobione.setText("Zrobione");
+            });
+        }).start();
     }                                        
 
     /**
